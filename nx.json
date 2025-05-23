@@ -58,5 +58,20 @@
         "linter": "eslint"
       }
     }
+  },
+  "release": {
+    "version": {
+      "conventionalCommits": true,
+      "generatorOptions": {
+        "currentVersionResolver": "git-tag",
+        "specifierSource": "conventional-commits"
+      }
+    },
+    "changelog": {
+      "workspaceChangelog": {
+        "createRelease": "github",
+        "file": "CHANGELOG.md"
+      }
+    }
   }
 }

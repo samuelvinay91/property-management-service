@@ -29,7 +29,7 @@ services:
       - maintenance-service
       - booking-service
     networks:
-      - propflow-network
+      - rentova-network
 
   # Auth Service
   auth-service:
@@ -41,7 +41,7 @@ services:
     environment:
       - NODE_ENV=development
       - AUTH_SERVICE_PORT=4001
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/propflow_auth
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/rentova_auth
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=your-jwt-secret-key
       - JWT_EXPIRES_IN=7d
@@ -52,7 +52,7 @@ services:
       - postgres
       - redis
     networks:
-      - propflow-network
+      - rentova-network
 
   # Property Service
   property-service:
@@ -64,7 +64,7 @@ services:
     environment:
       - NODE_ENV=development
       - PROPERTY_SERVICE_PORT=4002
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/propflow_properties
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/rentova_properties
       - REDIS_URL=redis://redis:6379
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - S3_BUCKET=propflow-properties
@@ -74,7 +74,7 @@ services:
       - redis
       - elasticsearch
     networks:
-      - propflow-network
+      - rentova-network
 
   # Tenant Service
   tenant-service:
@@ -86,13 +86,13 @@ services:
     environment:
       - NODE_ENV=development
       - TENANT_SERVICE_PORT=4003
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/propflow_tenants
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/rentova_tenants
       - REDIS_URL=redis://redis:6379
     depends_on:
       - postgres
       - redis
     networks:
-      - propflow-network
+      - rentova-network
 
   # Payment Service
   payment-service:
@@ -104,7 +104,7 @@ services:
     environment:
       - NODE_ENV=development
       - PAYMENT_SERVICE_PORT=4004
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/propflow_payments
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/rentova_payments
       - REDIS_URL=redis://redis:6379
       - STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
       - STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
@@ -114,7 +114,7 @@ services:
       - postgres
       - redis
     networks:
-      - propflow-network
+      - rentova-network
 
   # Notification Service
   notification-service:
@@ -126,7 +126,7 @@ services:
     environment:
       - NODE_ENV=development
       - NOTIFICATION_SERVICE_PORT=4005
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/propflow_notifications
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/rentova_notifications
       - REDIS_URL=redis://redis:6379
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - SMTP_HOST=smtp.gmail.com
@@ -142,7 +142,7 @@ services:
       - redis
       - rabbitmq
     networks:
-      - propflow-network
+      - rentova-network
 
   # Maintenance Service
   maintenance-service:
@@ -154,13 +154,13 @@ services:
     environment:
       - NODE_ENV=development
       - MAINTENANCE_SERVICE_PORT=4006
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/propflow_maintenance
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/rentova_maintenance
       - REDIS_URL=redis://redis:6379
     depends_on:
       - postgres
       - redis
     networks:
-      - propflow-network
+      - rentova-network
 
   # Booking Service
   booking-service:
@@ -172,14 +172,14 @@ services:
     environment:
       - NODE_ENV=development
       - BOOKING_SERVICE_PORT=4007
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/propflow_bookings
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/rentova_bookings
       - REDIS_URL=redis://redis:6379
       - CALENDAR_SERVICE_URL=http://calendar-service:4008
     depends_on:
       - postgres
       - redis
     networks:
-      - propflow-network
+      - rentova-network
 
   # AI Services
   ai-services:
@@ -191,7 +191,7 @@ services:
     environment:
       - ENVIRONMENT=development
       - AI_SERVICE_PORT=8000
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/propflow_ai
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/rentova_ai
       - REDIS_URL=redis://redis:6379
       - OPENAI_API_KEY=your_openai_api_key
       - ANTHROPIC_API_KEY=your_anthropic_api_key
@@ -205,7 +205,7 @@ services:
     volumes:
       - ./ai-services/models:/app/models
     networks:
-      - propflow-network
+      - rentova-network
 
   # Frontend
   frontend:
@@ -225,7 +225,7 @@ services:
       - api-gateway
       - ai-services
     networks:
-      - propflow-network
+      - rentova-network
 
   # PostgreSQL Database
   postgres:
@@ -240,7 +240,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - propflow-network
+      - rentova-network
 
   # Redis Cache
   redis:
@@ -251,7 +251,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - propflow-network
+      - rentova-network
 
   # RabbitMQ Message Broker
   rabbitmq:
@@ -265,7 +265,7 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
-      - propflow-network
+      - rentova-network
 
   # Elasticsearch
   elasticsearch:
@@ -279,7 +279,7 @@ services:
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
-      - propflow-network
+      - rentova-network
 
   # MongoDB (for AI services and analytics)
   mongodb:
@@ -289,11 +289,11 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=propflow
       - MONGO_INITDB_ROOT_PASSWORD=password
-      - MONGO_INITDB_DATABASE=propflow_ai
+      - MONGO_INITDB_DATABASE=rentova_ai
     volumes:
       - mongodb_data:/data/db
     networks:
-      - propflow-network
+      - rentova-network
 
   # Prometheus (Monitoring)
   prometheus:
@@ -310,7 +310,7 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
     networks:
-      - propflow-network
+      - rentova-network
 
   # Grafana (Dashboards)
   grafana:
@@ -324,7 +324,7 @@ services:
       - ./infrastructure/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - ./infrastructure/grafana/datasources:/etc/grafana/provisioning/datasources
     networks:
-      - propflow-network
+      - rentova-network
 
   # Nginx (Load Balancer)
   nginx:
@@ -339,7 +339,7 @@ services:
       - frontend
       - api-gateway
     networks:
-      - propflow-network
+      - rentova-network
 
 volumes:
   postgres_data:
@@ -351,5 +351,5 @@ volumes:
   grafana_data:
 
 networks:
-  propflow-network:
+  rentova-network:
     driver: bridge

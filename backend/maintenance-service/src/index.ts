@@ -6,10 +6,16 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+
+// Shared utilities
+import { maintenanceLogger as logger, requestLoggerMiddleware } from '../shared/utils/logger';
+import { createServiceConnection } from '../shared/utils/database';
+import { errorHandler, setupGlobalErrorHandlers, formatGraphQLError } from '../shared/middleware/errorHandler';
+import { maintenanceNotificationClient } from '../shared/utils/notificationClient';
+
+// Service-specific imports
 import { typeDefs } from './graphql/typeDefs';
 import { resolvers } from './graphql/resolvers';
-import { initializeDatabase, gracefulShutdown, checkDatabaseHealth } from './config/database';
-import { Logger, requestLoggingMiddleware } from './utils/logger';
 import { MaintenanceService } from './services/MaintenanceService';
 import { WorkOrderService } from './services/WorkOrderService';
 import { VendorService } from './services/VendorService';
@@ -17,9 +23,15 @@ import { AssetService } from './services/AssetService';
 import { InspectionService } from './services/InspectionService';
 import { ScheduleService } from './services/ScheduleService';
 import { FileUploadService } from './services/FileUploadService';
-import { NotificationService } from './services/NotificationService';
+import { MaintenanceRequest } from './entities/MaintenanceRequest';
+import { WorkOrder } from './entities/WorkOrder';
+import { Vendor } from './entities/Vendor';
+import { Asset } from './entities/Asset';
+import { Inspection } from './entities/Inspection';
+import { MaintenanceSchedule } from './entities/MaintenanceSchedule';
+import { Expense } from './entities/Expense';
+import { WorkOrderAttachment } from './entities/WorkOrderAttachment';
 
-const logger = new Logger('MaintenanceService');
 
 class MaintenanceServiceApp {
   private app: express.Application;

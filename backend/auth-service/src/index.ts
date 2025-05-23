@@ -1,83 +1,131 @@
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
 import { buildSubgraphSchema } from '@apollo/subgraph';
-import { typeDefs } from './graphql/typeDefs';
-import { resolvers } from './graphql/resolvers';
-import { createConnection } from './database/connection';
-import { createRedisClient } from './database/redis';
-import { errorHandler } from './middleware/errorHandler';
-import { initializePassport } from './config/passport';
-import passport from 'passport';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import passport from 'passport';
 import 'dotenv/config';
 
-const logger = {
-  info: (message: string, ...args: any[]) => console.log(`ℹ️ [Auth-Service] ${message}`, ...args),
-  error: (message: string, ...args: any[]) => console.error(`❌ [Auth-Service] ${message}`, ...args),
-  warn: (message: string, ...args: any[]) => console.warn(`⚠️ [Auth-Service] ${message}`, ...args),
-  debug: (message: string, ...args: any[]) => console.debug(`🐛 [Auth-Service] ${message}`, ...args)
-};
+// Shared utilities
+import { authLogger as logger, requestLoggerMiddleware } from '../shared/utils/logger';
+import { createServiceConnection } from '../shared/utils/database';
+import { errorHandler, setupGlobalErrorHandlers, formatGraphQLError } from '../shared/middleware/errorHandler';
+import { authNotificationClient } from '../shared/utils/notificationClient';
+
+// Service-specific imports
+import { typeDefs } from './graphql/typeDefs';
+import { resolvers } from './graphql/resolvers';
+import { createRedisClient } from './database/redis';
+import { initializePassport } from './config/passport';
+import { User } from './entities/User';
 
 async function startServer() {
   try {
-    // Initialize database connections
-    await createConnection();
+    // Setup global error handlers
+    setupGlobalErrorHandlers('AuthService');
+
+    // Initialize database connection using shared factory
+    const connection = await createServiceConnection('AuthService', [User], {
+      enableRetry: true,
+      retryAttempts: 3,
+      logging: process.env.NODE_ENV === 'development'
+    });
+
+    // Initialize Redis connection
     await createRedisClient();
+
+    // Test notification service connection
+    const notificationHealthy = await authNotificationClient.healthCheck();
+    if (!notificationHealthy) {
+      logger.warn('Notification service is not available - notifications will be queued');
+    }
     
     const app = express();
     
     // Security middleware
-    app.use(helmet());
+    app.use(helmet({
+      contentSecurityPolicy: process.env.NODE_ENV === 'production'
+    }));
+    
     app.use(cors({
-      origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+      origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
       credentials: true
     }));
-    app.use(compression());
-    app.use(express.json({ limit: '10mb' }));
-    app.use(express.urlencoded({ extended: true }));
     
+    app.use(compression());
+
+    // Request logging middleware
+    app.use(requestLoggerMiddleware('AuthService'));
+
     // Initialize Passport
     initializePassport();
     app.use(passport.initialize());
-    
-    // Health check
+
+    // Body parsing
+    app.use(express.json({ limit: '10mb' }));
+    app.use(express.urlencoded({ extended: true }));
+
+    // Health check endpoint
     app.get('/health', (req, res) => {
-      res.status(200).json({
-        service: 'auth-service',
+      res.json({
         status: 'healthy',
-        timestamp: new Date().toISOString()
+        service: 'AuthService',
+        timestamp: new Date().toISOString(),
+        database: connection.isInitialized,
+        notifications: notificationHealthy
       });
     });
     
-    // Apollo Server
+    // Create Apollo Server
     const server = new ApolloServer({
-      schema: buildSubgraphSchema([{ typeDefs, resolvers }]),
+      schema: buildSubgraphSchema({ typeDefs, resolvers }),
+      formatError: formatGraphQLError('AuthService'),
       context: ({ req }) => ({
         user: req.user,
-        headers: req.headers
+        logger: logger.child({ 
+          traceId: req.headers['x-trace-id'],
+          userId: req.user?.id 
+        }),
+        notificationClient: authNotificationClient
       }),
       introspection: process.env.NODE_ENV !== 'production',
       playground: process.env.NODE_ENV !== 'production'
     });
     
     await server.start();
-    server.applyMiddleware({ app, path: '/graphql' });
-    
-    // Error handling
-    app.use(errorHandler);
-    
-    const PORT = process.env.AUTH_SERVICE_PORT || 4001;
-    
-    app.listen(PORT, () => {
-      logger.info(`🔐 Auth Service ready at http://localhost:${PORT}${server.graphqlPath}`);
+    server.applyMiddleware({ 
+      app, 
+      path: '/graphql',
+      cors: false // Already handled above
     });
+
+    // Error handling middleware (must be last)
+    app.use(errorHandler('AuthService'));
+
+    const port = process.env.PORT || 3001;
     
+    app.listen(port, () => {
+      logger.info(`🚀 Auth Service running on port ${port}`);
+      logger.info(`📊 GraphQL endpoint: http://localhost:${port}${server.graphqlPath}`);
+      logger.info(`🏥 Health check: http://localhost:${port}/health`);
+    });
+
   } catch (error) {
-    logger.error('Failed to start Auth Service:', error);
+    logger.error('Failed to start Auth Service', error);
     process.exit(1);
   }
 }
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  process.exit(0);
+});
 
 startServer();

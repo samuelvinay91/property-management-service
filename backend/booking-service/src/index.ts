@@ -6,16 +6,25 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+
+// Shared utilities
+import { bookingLogger as logger, requestLoggerMiddleware } from '../shared/utils/logger';
+import { createServiceConnection } from '../shared/utils/database';
+import { errorHandler, setupGlobalErrorHandlers, formatGraphQLError } from '../shared/middleware/errorHandler';
+import { bookingNotificationClient } from '../shared/utils/notificationClient';
+
+// Service-specific imports
 import { typeDefs } from './graphql/typeDefs';
 import { resolvers } from './graphql/resolvers';
-import { initializeDatabase, gracefulShutdown, checkDatabaseHealth } from './config/database';
-import { Logger, requestLoggingMiddleware } from './utils/logger';
 import { BookingService } from './services/BookingService';
 import { SlotService } from './services/SlotService';
 import { TemplateService } from './services/TemplateService';
 import { ParticipantService } from './services/ParticipantService';
-
-const logger = new Logger('BookingService');
+import { Booking } from './entities/Booking';
+import { BookingSlot } from './entities/BookingSlot';
+import { Calendar } from './entities/Calendar';
+import { AvailabilityTemplate } from './entities/AvailabilityTemplate';
+import { Participant } from './entities/Participant';
 
 class BookingServiceApp {
   private app: express.Application;
@@ -37,9 +46,25 @@ class BookingServiceApp {
 
   async initialize(): Promise<void> {
     try {
-      // Initialize database
-      await initializeDatabase();
+      // Setup global error handlers
+      setupGlobalErrorHandlers('BookingService');
+
+      // Initialize database connection using shared factory
+      const connection = await createServiceConnection('BookingService', [
+        Booking, BookingSlot, Calendar, AvailabilityTemplate, Participant
+      ], {
+        enableRetry: true,
+        retryAttempts: 3,
+        logging: process.env.NODE_ENV === 'development'
+      });
+
       logger.info('Database initialized successfully');
+
+      // Test notification service connection
+      const notificationHealthy = await bookingNotificationClient.healthCheck();
+      if (!notificationHealthy) {
+        logger.warn('Notification service is not available - notifications will be queued');
+      }
 
       // Setup Express middleware
       this.setupMiddleware();
@@ -58,10 +83,7 @@ class BookingServiceApp {
 
       logger.info('Booking service initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize booking service', {
-        error: error.message,
-        stack: error.stack
-      });
+      logger.error('Failed to initialize booking service', error);
       throw error;
     }
   }
@@ -96,7 +118,7 @@ class BookingServiceApp {
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
     // Request logging
-    this.app.use(requestLoggingMiddleware);
+    this.app.use(requestLoggerMiddleware('BookingService'));
 
     // Trust proxy for accurate IP addresses
     this.app.set('trust proxy', 1);

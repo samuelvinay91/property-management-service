@@ -12,7 +12,7 @@ COPY package*.json ./
 COPY tsconfig.json ./
 
 # Install dependencies
-RUN npm ci --only=production --silent
+RUN npm install --omit=dev --silent
 
 # Copy source code
 COPY src ./src
