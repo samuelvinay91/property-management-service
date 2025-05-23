@@ -1,0 +1,48 @@
+{
+  "name": "propflow-platform",
+  "version": "1.0.0",
+  "description": "Comprehensive AI-powered property management platform",
+  "main": "index.js",
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../mobile && npm install && cd ../ai-services && pip install -r requirements.txt",
+    "dev": "docker-compose -f docker-compose.dev.yml up",
+    "prod": "docker-compose up",
+    "build": "npm run build:backend && npm run build:frontend && npm run build:mobile",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:mobile": "cd mobile && npm run build",
+    "test": "npm run test:backend && npm run test:frontend && npm run test:e2e",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "test:e2e": "cd tests && npm test",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "deploy:dev": "npm run build && kubectl apply -f infrastructure/k8s/dev/",
+    "deploy:prod": "npm run build && kubectl apply -f infrastructure/k8s/prod/",
+    "migrate": "cd backend && npm run migrate",
+    "seed": "cd backend && npm run seed"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/propflow-platform.git"
+  },
+  "keywords": [
+    "property-management",
+    "real-estate",
+    "ai",
+    "chatbot",
+    "microservices",
+    "saas"
+  ],
+  "author": "PropFlow Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/propflow-platform/issues"
+  },
+  "homepage": "https://github.com/yourusername/propflow-platform#readme",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

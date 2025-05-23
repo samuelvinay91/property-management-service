@@ -1,0 +1,200 @@
+version: '3.8'
+
+# Development-specific configuration
+services:
+  # API Gateway (Development)
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend/api-gateway:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DEBUG=true
+
+  # Auth Service (Development)
+  auth-service:
+    build:
+      context: ./backend/auth-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend/auth-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DEBUG=true
+
+  # Property Service (Development)
+  property-service:
+    build:
+      context: ./backend/property-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend/property-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DEBUG=true
+
+  # Tenant Service (Development)
+  tenant-service:
+    build:
+      context: ./backend/tenant-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend/tenant-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DEBUG=true
+
+  # Payment Service (Development)
+  payment-service:
+    build:
+      context: ./backend/payment-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend/payment-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DEBUG=true
+
+  # Notification Service (Development)
+  notification-service:
+    build:
+      context: ./backend/notification-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend/notification-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DEBUG=true
+
+  # Maintenance Service (Development)
+  maintenance-service:
+    build:
+      context: ./backend/maintenance-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend/maintenance-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DEBUG=true
+
+  # Booking Service (Development)
+  booking-service:
+    build:
+      context: ./backend/booking-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend/booking-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DEBUG=true
+
+  # AI Services (Development)
+  ai-services:
+    build:
+      context: ./ai-services
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./ai-services:/app
+      - /app/__pycache__
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - PYTHONPATH=/app
+
+  # Frontend (Development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+
+  # Development Tools
+  
+  # pgAdmin (Database Management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@propflow.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - propflow-network
+
+  # Redis Commander (Redis Management)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    networks:
+      - propflow-network
+
+  # Mailhog (Email Testing)
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - propflow-network
+
+  # MinIO (S3 Compatible Storage for Development)
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=propflow
+      - MINIO_ROOT_PASSWORD=propflow123
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - propflow-network
+
+  # Jaeger (Distributed Tracing)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - propflow-network
+
+  # Zipkin (Alternative Tracing)
+  zipkin:
+    image: openzipkin/zipkin:latest
+    ports:
+      - "9411:9411"
+    networks:
+      - propflow-network
+
+volumes:
+  pgadmin_data:
+  minio_data:
+
+networks:
+  propflow-network:
+    driver: bridge
