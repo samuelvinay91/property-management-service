@@ -5,12 +5,20 @@ import { typeDefs } from './graphql/typeDefs';
 import { resolvers } from './graphql/resolvers';
 import { createConnection } from './database/connection';
 import { createRedisClient } from './database/redis';
-import { createLogger } from '../../../backend/api-gateway/src/utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { initializePassport } from './config/passport';
 import passport from 'passport';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import 'dotenv/config';
 
-const logger = createLogger('Auth-Service');
+const logger = {
+  info: (message: string, ...args: any[]) => console.log(`ℹ️ [Auth-Service] ${message}`, ...args),
+  error: (message: string, ...args: any[]) => console.error(`❌ [Auth-Service] ${message}`, ...args),
+  warn: (message: string, ...args: any[]) => console.warn(`⚠️ [Auth-Service] ${message}`, ...args),
+  debug: (message: string, ...args: any[]) => console.debug(`🐛 [Auth-Service] ${message}`, ...args)
+};
 
 async function startServer() {
   try {
@@ -19,6 +27,16 @@ async function startServer() {
     await createRedisClient();
     
     const app = express();
+    
+    // Security middleware
+    app.use(helmet());
+    app.use(cors({
+      origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+      credentials: true
+    }));
+    app.use(compression());
+    app.use(express.json({ limit: '10mb' }));
+    app.use(express.urlencoded({ extended: true }));
     
     // Initialize Passport
     initializePassport();

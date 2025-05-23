@@ -1,0 +1,192 @@
+# Cloud Run service configurations for PropFlow platform
+# This file defines all the Cloud Run services with their specific configurations
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: propflow-api-gateway
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "10"
+        autoscaling.knative.dev/minScale: "1"
+        run.googleapis.com/memory: "1Gi"
+        run.googleapis.com/cpu: "1000m"
+    spec:
+      containerConcurrency: 100
+      timeoutSeconds: 300
+      containers:
+      - image: gcr.io/PROJECT_ID/propflow-api-gateway:latest
+        ports:
+        - containerPort: 4000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "4000"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: latest
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: propflow-auth-service
+  annotations:
+    run.googleapis.com/ingress: internal
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "5"
+        autoscaling.knative.dev/minScale: "0"
+        run.googleapis.com/memory: "512Mi"
+        run.googleapis.com/cpu: "1000m"
+    spec:
+      containerConcurrency: 100
+      timeoutSeconds: 300
+      containers:
+      - image: gcr.io/PROJECT_ID/propflow-auth-service:latest
+        ports:
+        - containerPort: 4001
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: AUTH_SERVICE_PORT
+          value: "4001"
+        - name: DATABASE_URL
+          value: "postgresql://postgres:PASSWORD@/propflow_auth?host=/cloudsql/PROJECT_ID:REGION:propflow-db"
+        - name: REDIS_URL
+          value: "redis://REDIS_IP:6379"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: latest
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "1000m"
+
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: propflow-property-service
+  annotations:
+    run.googleapis.com/ingress: internal
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "5"
+        autoscaling.knative.dev/minScale: "0"
+        run.googleapis.com/memory: "1Gi"
+        run.googleapis.com/cpu: "1000m"
+    spec:
+      containerConcurrency: 100
+      timeoutSeconds: 300
+      containers:
+      - image: gcr.io/PROJECT_ID/propflow-property-service:latest
+        ports:
+        - containerPort: 4002
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PROPERTY_SERVICE_PORT
+          value: "4002"
+        - name: DATABASE_URL
+          value: "postgresql://postgres:PASSWORD@/propflow_properties?host=/cloudsql/PROJECT_ID:REGION:propflow-db"
+        - name: REDIS_URL
+          value: "redis://REDIS_IP:6379"
+        - name: GOOGLE_CLOUD_STORAGE_BUCKET
+          value: "PROJECT_ID-propflow-storage"
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: propflow-ai-services
+  annotations:
+    run.googleapis.com/ingress: internal
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "3"
+        autoscaling.knative.dev/minScale: "0"
+        run.googleapis.com/memory: "2Gi"
+        run.googleapis.com/cpu: "2000m"
+    spec:
+      containerConcurrency: 10
+      timeoutSeconds: 600
+      containers:
+      - image: gcr.io/PROJECT_ID/propflow-ai-services:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: AI_SERVICE_PORT
+          value: "8000"
+        - name: DATABASE_URL
+          value: "postgresql://postgres:PASSWORD@/propflow_ai?host=/cloudsql/PROJECT_ID:REGION:propflow-db"
+        - name: REDIS_URL
+          value: "redis://REDIS_IP:6379"
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: openai-api-key
+              key: latest
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: propflow-frontend
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "10"
+        autoscaling.knative.dev/minScale: "1"
+        run.googleapis.com/memory: "512Mi"
+        run.googleapis.com/cpu: "1000m"
+    spec:
+      containerConcurrency: 100
+      timeoutSeconds: 300
+      containers:
+      - image: gcr.io/PROJECT_ID/propflow-frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: NEXT_PUBLIC_API_URL
+          value: "https://propflow-api-gateway-xxx.a.run.app/graphql"
+        - name: NEXT_PUBLIC_AI_API_URL
+          value: "https://propflow-ai-services-xxx.a.run.app"
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "1000m"

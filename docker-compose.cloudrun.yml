@@ -1,0 +1,182 @@
+version: '3.8'
+
+# Google Cloud Run optimized Docker Compose
+# This configuration is designed for deployment on Google Cloud Run
+
+services:
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - JWT_SECRET=${JWT_SECRET}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - PROPERTY_SERVICE_URL=${PROPERTY_SERVICE_URL}
+      - TENANT_SERVICE_URL=${TENANT_SERVICE_URL}
+      - PAYMENT_SERVICE_URL=${PAYMENT_SERVICE_URL}
+      - NOTIFICATION_SERVICE_URL=${NOTIFICATION_SERVICE_URL}
+      - MAINTENANCE_SERVICE_URL=${MAINTENANCE_SERVICE_URL}
+      - BOOKING_SERVICE_URL=${BOOKING_SERVICE_URL}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+    restart: unless-stopped
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./backend/auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:4001"
+    environment:
+      - NODE_ENV=production
+      - AUTH_SERVICE_PORT=4001
+      - DATABASE_URL=${AUTH_DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=7d
+      - REFRESH_TOKEN_EXPIRES_IN=30d
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    restart: unless-stopped
+
+  # Property Service
+  property-service:
+    build:
+      context: ./backend/property-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:4002"
+    environment:
+      - NODE_ENV=production
+      - PROPERTY_SERVICE_PORT=4002
+      - DATABASE_URL=${PROPERTY_DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+      - GOOGLE_CLOUD_STORAGE_BUCKET=${STORAGE_BUCKET}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
+    restart: unless-stopped
+
+  # Tenant Service
+  tenant-service:
+    build:
+      context: ./backend/tenant-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:4003"
+    environment:
+      - NODE_ENV=production
+      - TENANT_SERVICE_PORT=4003
+      - DATABASE_URL=${TENANT_DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+    restart: unless-stopped
+
+  # Payment Service
+  payment-service:
+    build:
+      context: ./backend/payment-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:4004"
+    environment:
+      - NODE_ENV=production
+      - PAYMENT_SERVICE_PORT=4004
+      - DATABASE_URL=${PAYMENT_DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
+    restart: unless-stopped
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./backend/notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:4005"
+    environment:
+      - NODE_ENV=production
+      - NOTIFICATION_SERVICE_PORT=4005
+      - DATABASE_URL=${NOTIFICATION_DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+      - FIREBASE_SERVER_KEY=${FIREBASE_SERVER_KEY}
+    restart: unless-stopped
+
+  # Maintenance Service
+  maintenance-service:
+    build:
+      context: ./backend/maintenance-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:4006"
+    environment:
+      - NODE_ENV=production
+      - MAINTENANCE_SERVICE_PORT=4006
+      - DATABASE_URL=${MAINTENANCE_DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+    restart: unless-stopped
+
+  # Booking Service
+  booking-service:
+    build:
+      context: ./backend/booking-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:4007"
+    environment:
+      - NODE_ENV=production
+      - BOOKING_SERVICE_PORT=4007
+      - DATABASE_URL=${BOOKING_DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+    restart: unless-stopped
+
+  # AI Services
+  ai-services:
+    build:
+      context: ./ai-services
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8000"
+    environment:
+      - ENVIRONMENT=production
+      - AI_SERVICE_PORT=8000
+      - DATABASE_URL=${AI_DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
+      - LLM_PROVIDER=openai
+    restart: unless-stopped
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_APP_URL=${FRONTEND_URL}
+      - NEXT_PUBLIC_API_URL=${API_GATEWAY_URL}
+      - NEXT_PUBLIC_AI_API_URL=${AI_SERVICE_URL}
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+    restart: unless-stopped

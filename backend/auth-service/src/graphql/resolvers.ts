@@ -1,9 +1,11 @@
 import { AuthService } from '../services/AuthService';
 import { UserService } from '../services/UserService';
 import { TwoFactorService } from '../services/TwoFactorService';
-import { createLogger } from '../../../../backend/api-gateway/src/utils/logger';
 
-const logger = createLogger('Auth-Resolvers');
+const logger = {
+  info: (message: string, ...args: any[]) => console.log(`ℹ️ [Auth-Resolvers] ${message}`, ...args),
+  error: (message: string, ...args: any[]) => console.error(`❌ [Auth-Resolvers] ${message}`, ...args)
+};
 
 export const resolvers = {
   Query: {

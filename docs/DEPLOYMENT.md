@@ -1,6 +1,354 @@
-# PropFlow Deployment Guide
+# PropFlow - Deployment Guide
 
-This guide covers deployment options for the PropFlow property management platform across different cloud providers and environments.
+This guide covers deploying the PropFlow property management platform to Google Cloud Run and other cloud platforms.
+
+## 🚀 Quick Deploy to Google Cloud Run
+
+### Prerequisites
+
+1. **Google Cloud Account** with billing enabled
+2. **gcloud CLI** installed and authenticated
+3. **Docker** installed locally
+4. **Terraform** (optional, for infrastructure as code)
+
+### One-Click Deployment
+
+```bash
+# Clone the repository
+git clone https://github.com/samuelvinay91/property-management-service.git
+cd property-management-platform
+
+# Set your project ID
+export GOOGLE_CLOUD_PROJECT="your-project-id"
+
+# Run the deployment script
+chmod +x infrastructure/gcp/deploy.sh
+./infrastructure/gcp/deploy.sh
+```
+
+### Manual Deployment Steps
+
+#### 1. Setup Google Cloud Project
+
+```bash
+# Authenticate with Google Cloud
+gcloud auth login
+
+# Set your project
+gcloud config set project YOUR_PROJECT_ID
+
+# Enable required APIs
+gcloud services enable \
+    cloudbuild.googleapis.com \
+    run.googleapis.com \
+    sqladmin.googleapis.com \
+    redis.googleapis.com \
+    storage.googleapis.com \
+    secretmanager.googleapis.com
+```
+
+#### 2. Create Infrastructure
+
+```bash
+# Create Cloud SQL instance
+gcloud sql instances create propflow-db \
+    --database-version=POSTGRES_14 \
+    --tier=db-f1-micro \
+    --region=us-central1
+
+# Create Redis instance
+gcloud redis instances create propflow-redis \
+    --size=1 \
+    --region=us-central1
+
+# Create storage bucket
+gsutil mb gs://YOUR_PROJECT_ID-propflow-storage
+```
+
+#### 3. Build and Deploy Services
+
+```bash
+# Build all services using Cloud Build
+gcloud builds submit --config infrastructure/gcp/cloudbuild.yaml
+
+# Or build individual services
+cd backend/auth-service
+gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/propflow-auth-service
+
+# Deploy to Cloud Run
+gcloud run deploy propflow-auth-service \
+    --image gcr.io/YOUR_PROJECT_ID/propflow-auth-service \
+    --region us-central1 \
+    --platform managed
+```
+
+## 🏗️ Infrastructure as Code (Terraform)
+
+### Deploy with Terraform
+
+```bash
+cd infrastructure/gcp/terraform
+
+# Initialize Terraform
+terraform init
+
+# Create terraform.tfvars
+echo 'project_id = "your-project-id"' > terraform.tfvars
+echo 'region = "us-central1"' >> terraform.tfvars
+
+# Plan and apply
+terraform plan
+terraform apply
+```
+
+### Terraform Configuration
+
+The Terraform configuration includes:
+- Cloud Run services for all microservices
+- Cloud SQL PostgreSQL instance with multiple databases
+- Redis instance for caching
+- Cloud Storage bucket for file uploads
+- VPC network with private connectivity
+- IAM roles and service accounts
+- Secret Manager for sensitive data
+
+## 🐳 Local Development with Docker
+
+### Using Docker Compose
+
+```bash
+# Start all services locally
+docker-compose up -d
+
+# Start development environment
+docker-compose -f docker-compose.dev.yml up
+
+# Stop services
+docker-compose down
+```
+
+### Individual Service Development
+
+```bash
+# Auth Service
+cd backend/auth-service
+npm install
+npm run dev
+
+# Property Service
+cd backend/property-service
+npm install
+npm run dev
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+Copy the example environment file and configure:
+
+```bash
+cp infrastructure/gcp/environment.example .env
+```
+
+Key variables to configure:
+- `GOOGLE_CLOUD_PROJECT`: Your GCP project ID
+- `JWT_SECRET`: Secret key for JWT tokens
+- `STRIPE_SECRET_KEY`: Stripe payment processing
+- `OPENAI_API_KEY`: For AI features
+- `DATABASE_URL`: PostgreSQL connection string
+- `REDIS_URL`: Redis connection string
+
+### Secrets Management
+
+Store sensitive data in Google Secret Manager:
+
+```bash
+# Create secrets
+echo "your-jwt-secret" | gcloud secrets create jwt-secret --data-file=-
+echo "your-stripe-key" | gcloud secrets create stripe-secret-key --data-file=-
+echo "your-openai-key" | gcloud secrets create openai-api-key --data-file=-
+```
+
+## 📊 Monitoring and Observability
+
+### Cloud Monitoring
+
+The deployment includes:
+- **Health checks** for all services
+- **Automatic scaling** based on demand
+- **Error tracking** with Cloud Error Reporting
+- **Performance monitoring** with Cloud Trace
+- **Log aggregation** with Cloud Logging
+
+### Access Logs
+
+```bash
+# View logs for a specific service
+gcloud logs tail --follow --filter="resource.type=cloud_run_revision AND resource.labels.service_name=propflow-auth-service"
+
+# View all PropFlow logs
+gcloud logs tail --follow --filter="labels.app=propflow"
+```
+
+## 🔒 Security
+
+### Network Security
+- Services use **private networking** where possible
+- **VPC connector** for secure communication
+- **IAM-based authentication** between services
+- **SSL/TLS encryption** for all external communication
+
+### Data Security
+- **Database encryption** at rest and in transit
+- **Secret Manager** for sensitive configuration
+- **Service accounts** with minimal required permissions
+- **Regular security updates** via automated builds
+
+## 🚀 CI/CD Pipeline
+
+### GitHub Actions
+
+The repository includes GitHub Actions workflows for:
+- **Automated testing** on pull requests
+- **Security scanning** with CodeQL
+- **Docker image building** and scanning
+- **Automated deployment** to staging and production
+
+### Manual Deployment
+
+```bash
+# Deploy specific service
+gcloud run deploy propflow-auth-service \
+    --image gcr.io/YOUR_PROJECT_ID/propflow-auth-service:latest \
+    --region us-central1
+
+# Update environment variables
+gcloud run services update propflow-auth-service \
+    --set-env-vars JWT_SECRET=new-secret \
+    --region us-central1
+```
+
+## 📈 Scaling
+
+### Automatic Scaling
+
+Cloud Run automatically scales based on:
+- **CPU utilization**
+- **Memory usage**
+- **Request concurrency**
+- **Request latency**
+
+### Manual Scaling Configuration
+
+```bash
+# Set scaling limits
+gcloud run services update propflow-api-gateway \
+    --min-instances 1 \
+    --max-instances 100 \
+    --concurrency 80 \
+    --region us-central1
+```
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Failures**
+   ```bash
+   # Check Cloud SQL instance status
+   gcloud sql instances describe propflow-db
+   
+   # Test connection
+   gcloud sql connect propflow-db --user=postgres
+   ```
+
+2. **Service Deployment Failures**
+   ```bash
+   # Check service logs
+   gcloud run services logs read propflow-auth-service --region us-central1
+   
+   # Check build logs
+   gcloud builds list --limit 10
+   ```
+
+3. **Performance Issues**
+   ```bash
+   # Monitor service metrics
+   gcloud run services describe propflow-api-gateway --region us-central1
+   ```
+
+### Health Checks
+
+All services expose health check endpoints:
+- `GET /health` - Basic health status
+- `GET /metrics` - Prometheus metrics (if enabled)
+
+## 💰 Cost Optimization
+
+### Cost Management Tips
+
+1. **Use appropriate instance sizes**
+   - Micro instances for low-traffic services
+   - Higher memory for AI services
+
+2. **Configure auto-scaling**
+   - Set minimum instances to 0 for development
+   - Use appropriate concurrency limits
+
+3. **Monitor usage**
+   ```bash
+   # Check current costs
+   gcloud billing accounts list
+   gcloud alpha billing budgets list --billing-account ACCOUNT_ID
+   ```
+
+## 🔄 Updates and Maintenance
+
+### Rolling Updates
+
+```bash
+# Deploy new version with zero downtime
+gcloud run deploy propflow-auth-service \
+    --image gcr.io/YOUR_PROJECT_ID/propflow-auth-service:v2.0.0 \
+    --region us-central1
+```
+
+### Database Migrations
+
+```bash
+# Run migrations
+cd backend/auth-service
+npm run migrate
+
+# Or using Cloud Build
+gcloud builds submit --config infrastructure/gcp/migration-build.yaml
+```
+
+### Backup and Recovery
+
+- **Automated backups** for Cloud SQL
+- **Point-in-time recovery** available
+- **Cross-region replication** for high availability
+
+## 📞 Support
+
+For deployment issues:
+1. Check the [troubleshooting guide](#troubleshooting)
+2. Review service logs in Cloud Console
+3. Create an issue in the GitHub repository
+4. Contact support at support@propflow.com
+
+## 🔗 Useful Links
+
+- [Google Cloud Run Documentation](https://cloud.google.com/run/docs)
+- [Cloud SQL Documentation](https://cloud.google.com/sql/docs)
+- [PropFlow API Documentation](./API.md)
+- [Development Setup](./DEVELOPMENT.md)
+
+---
+
+# Original Multi-Cloud Deployment Options
 
 ## Quick Start
 
