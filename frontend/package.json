@@ -1,7 +1,7 @@
 {
-  "name": "propflow-frontend",
+  "name": "rentova-frontend",
   "version": "1.0.0",
-  "description": "PropFlow Frontend Application",
+  "description": "Rentova Frontend Application",
   "private": true,
   "scripts": {
     "dev": "next dev",

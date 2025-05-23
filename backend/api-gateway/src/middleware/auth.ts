@@ -1,52 +1,63 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request } from 'express';
 import jwt from 'jsonwebtoken';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Auth-Middleware');
 
-interface AuthRequest extends Request {
-  user?: any;
+interface User {
+  id: string;
+  email: string;
+  role: string;
+  iat?: number;
+  exp?: number;
 }
 
-export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authMiddleware = async (req: Request): Promise<User | null> => {
   try {
     const token = extractToken(req);
     
     // Allow introspection queries in development
     if (process.env.NODE_ENV !== 'production' && isIntrospectionQuery(req)) {
-      return next();
+      return null;
     }
     
     // Allow public queries (register, login, property search without authentication)
     if (isPublicQuery(req)) {
-      return next();
+      return null;
     }
     
     if (!token) {
-      return res.status(401).json({
-        error: 'Authentication required',
-        message: 'No token provided'
-      });
+      logger.debug('No token provided for request');
+      return null;
     }
     
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-      req.user = decoded;
-      next();
-    } catch (jwtError) {
-      logger.warn('Invalid token', { token: token.substring(0, 20) + '...', error: jwtError });
-      return res.status(401).json({
-        error: 'Invalid token',
-        message: 'Token verification failed'
+      const decoded = jwt.verify(
+        token, 
+        process.env.JWT_SECRET || 'default-secret'
+      ) as User;
+      
+      logger.debug('Successfully authenticated user:', { 
+        userId: decoded.id, 
+        email: decoded.email,
+        role: decoded.role 
       });
+      
+      return decoded;
+    } catch (jwtError: any) {
+      if (jwtError.name === 'TokenExpiredError') {
+        logger.warn('JWT token expired');
+      } else if (jwtError.name === 'JsonWebTokenError') {
+        logger.warn('Invalid JWT token');
+      } else {
+        logger.warn('JWT verification failed:', jwtError.message);
+      }
+      return null;
     }
     
   } catch (error) {
     logger.error('Auth middleware error:', error);
-    return res.status(500).json({
-      error: 'Authentication error',
-      message: 'Internal server error during authentication'
-    });
+    return null;
   }
 };
 
@@ -93,7 +104,8 @@ function isPublicQuery(req: Request): boolean {
     'verifyEmail',
     'searchProperties',
     'getProperty',
-    'getPublicProperties'
+    'getPublicProperties',
+    'IntrospectionQuery'
   ];
   
   // Check if operation name is in public list
@@ -119,48 +131,36 @@ function isPublicQuery(req: Request): boolean {
   );
 }
 
-export const requireRole = (roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({
-        error: 'Authentication required'
-      });
-    }
-    
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        error: 'Insufficient permissions',
-        message: `Required roles: ${roles.join(', ')}`
-      });
-    }
-    
-    next();
-  };
+export const requireAuth = (user: User | null): User => {
+  if (!user) {
+    throw new Error('Authentication required');
+  }
+  return user;
 };
 
-export const requireOwnership = (resourceIdField: string = 'id') => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({
-        error: 'Authentication required'
-      });
-    }
-    
-    const resourceId = req.params[resourceIdField] || req.body[resourceIdField];
-    
-    // Super admin can access everything
-    if (req.user.role === 'super_admin') {
-      return next();
-    }
-    
-    // Check if user owns the resource or has manager role
-    if (req.user.id !== resourceId && !['property_manager', 'landlord'].includes(req.user.role)) {
-      return res.status(403).json({
-        error: 'Access denied',
-        message: 'You can only access your own resources'
-      });
-    }
-    
-    next();
-  };
+export const requireRole = (user: User | null, roles: string[]): User => {
+  const authenticatedUser = requireAuth(user);
+  
+  if (!roles.includes(authenticatedUser.role)) {
+    throw new Error(`Insufficient permissions. Required roles: ${roles.join(', ')}`);
+  }
+  
+  return authenticatedUser;
+};
+
+export const requireOwnership = (user: User | null, resourceUserId: string): User => {
+  const authenticatedUser = requireAuth(user);
+  
+  // Super admin can access everything
+  if (authenticatedUser.role === 'super_admin') {
+    return authenticatedUser;
+  }
+  
+  // Check if user owns the resource or has manager role
+  if (authenticatedUser.id !== resourceUserId && 
+      !['property_manager', 'landlord'].includes(authenticatedUser.role)) {
+    throw new Error('Access denied. You can only access your own resources');
+  }
+  
+  return authenticatedUser;
 };

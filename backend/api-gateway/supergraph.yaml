@@ -1,0 +1,37 @@
+federation_version: 2
+subgraphs:
+  auth:
+    routing_url: http://localhost:4001/graphql
+    schema:
+      subgraph_url: http://localhost:4001/graphql
+      introspection: true
+  properties:
+    routing_url: http://localhost:4002/graphql
+    schema:
+      subgraph_url: http://localhost:4002/graphql
+      introspection: true
+  tenants:
+    routing_url: http://localhost:4003/graphql
+    schema:
+      subgraph_url: http://localhost:4003/graphql
+      introspection: true
+  maintenance:
+    routing_url: http://localhost:4004/graphql
+    schema:
+      subgraph_url: http://localhost:4004/graphql
+      introspection: true
+  bookings:
+    routing_url: http://localhost:4005/graphql
+    schema:
+      subgraph_url: http://localhost:4005/graphql
+      introspection: true
+  payments:
+    routing_url: http://localhost:4006/graphql
+    schema:
+      subgraph_url: http://localhost:4006/graphql
+      introspection: true
+  notifications:
+    routing_url: http://localhost:4007/graphql
+    schema:
+      subgraph_url: http://localhost:4007/graphql
+      introspection: true

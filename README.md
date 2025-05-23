@@ -1,189 +1,335 @@
-# PropFlow - Comprehensive Property Management Platform
+# 🏠 Rentova - AI-Powered Property Management Platform
 
-A cutting-edge, AI-powered property management platform built with modern microservices architecture, featuring real-time communication, intelligent automation, and seamless multi-cloud deployment.
+[![Deploy to Google Cloud Run](https://github.com/GoogleCloudPlatform/cloud-run-button/blob/master/deploy.svg)](https://console.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/yourusername/rentova-platform.git&cloudshell_working_dir=.&cloudshell_image=gcr.io/google.com/cloudsdktool/cloud-sdk:latest)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/rentova/platform)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A comprehensive, AI-powered property management platform built with modern microservices architecture. Featuring intelligent automation, real-time communication, advanced analytics, and seamless multi-cloud deployment.
+
+## 🚀 One-Click Deployment
+
+### Deploy to Google Cloud Run
+```bash
+# Single command deployment
+./scripts/deploy-cloudrun.sh
+
+# Or use the deploy button above
+```
+
+### Local Development (Single Command)
+```bash
+# Clone and start everything
+git clone https://github.com/yourusername/rentova-platform.git
+cd rentova-platform
+./scripts/quick-start.sh
+```
+
+### Docker Compose (Instant Setup)
+```bash
+# Start entire platform
+docker-compose up -d
+
+# Access applications:
+# 🌐 Frontend: http://localhost:3000
+# 🔧 Admin Panel: http://localhost:3000/admin
+# 📊 Monitoring: http://localhost:3000/monitoring
+# 🤖 AI Services: http://localhost:8000
+# 📱 Mobile (Expo): http://localhost:19006
+```
 
 ## 🏗️ Architecture Overview
 
-- **Backend**: Node.js/TypeScript with Express, GraphQL, and microservices
-- **Frontend**: React/Next.js with TypeScript and Tailwind CSS
-- **Mobile**: React Native with Expo
-- **AI Services**: Python with FastAPI, LangChain, and OpenAI/Anthropic
-- **Database**: PostgreSQL, Redis, MongoDB
-- **Message Queue**: RabbitMQ/Apache Kafka
-- **Container**: Docker & Kubernetes
-- **Cloud**: Multi-cloud support (AWS, GCP, Azure)
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Mobile App     │    │   Admin Panel   │
+│   (Next.js)     │    │ (React Native)   │    │   (React)       │
+└─────────┬───────┘    └────────┬─────────┘    └─────────┬───────┘
+          │                     │                        │
+          └─────────────────────┼────────────────────────┘
+                                │
+                    ┌───────────▼────────────┐
+                    │     API Gateway         │
+                    │   (GraphQL + REST)      │
+                    └───────────┬────────────┘
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        │                       │                       │
+┌───────▼───────┐    ┌─────────▼──────────┐    ┌───────▼───────┐
+│ Auth Service   │    │ Property Service   │    │ AI Services   │
+│ (Node.js)      │    │ (Node.js)         │    │ (Python)      │
+└───────┬───────┘    └─────────┬──────────┘    └───────┬───────┘
+        │                      │                       │
+        ├─────────────────┬────┼───────────────────────┘
+        │                 │    │
+┌───────▼───────┐ ┌───────▼────▼──────┐ ┌─────────────────┐
+│ PostgreSQL    │ │     Redis         │ │   Monitoring    │
+│ (Database)    │ │   (Cache)         │ │ (Prometheus)    │
+└───────────────┘ └───────────────────┘ └─────────────────┘
+```
 
-## 🚀 Features
+## ✨ Key Features
 
-### Core Property Management
+### 🏢 **Property Management**
 - Multi-property portfolio management
-- Tenant management and screening
-- Lease management and renewals
-- Maintenance request tracking
-- Financial reporting and analytics
-- Document management
+- Advanced property analytics & reporting
+- Lease management & automated renewals
+- Maintenance request tracking & scheduling
+- Financial reporting & tax documents
 
-### AI-Powered Features
-- Intelligent chatbot for tenants and landlords
+### 🤖 **AI-Powered Intelligence**
+- Intelligent chatbot for tenants & landlords
 - Automated lease document generation
 - Predictive maintenance scheduling
-- Market analysis and pricing optimization
-- Automated tenant screening
+- Market analysis & pricing optimization
 - Smart expense categorization
 
-### Communication & Booking
-- Real-time messaging
-- Video call integration
-- Property viewing booking system
-- Automated notifications
-- Multi-channel communication (SMS, Email, Push)
-
-### Payment & Financial
-- Integrated payment processing (Stripe, PayPal)
-- Automated rent collection
-- Late fee management
-- Financial reporting
+### 💰 **Payment & Financial**
+- Integrated payment processing (Stripe)
+- Automated rent collection & late fees
+- Comprehensive financial reporting
 - Tax document generation
-- Expense tracking
+- Real-time payment tracking
 
-### Advanced Features
-- IoT device integration
-- Property analytics dashboard
-- Mobile app for tenants and managers
-- API-first architecture
-- Real-time notifications
-- Multi-tenant SaaS architecture
+### 📱 **Multi-Platform Access**
+- Responsive web application
+- Native mobile app (iOS & Android)
+- Progressive Web App (PWA)
+- Admin dashboard with advanced analytics
 
-## 🛠️ Quick Start
+### 📊 **Advanced Analytics**
+- Real-time performance monitoring
+- Predictive analytics & forecasting
+- Market trend analysis
+- Occupancy optimization
+- Revenue performance insights
 
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/propflow-platform.git
+## 🛠️ Technology Stack
 
-# Install dependencies
-npm run install:all
-
-# Start development environment
-docker-compose up -dev
-
-# Access the application
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:4000
-# AI Services: http://localhost:8000
-```
+| Layer | Technologies |
+|-------|-------------|
+| **Frontend** | Next.js 14, TypeScript, Tailwind CSS, Recharts |
+| **Mobile** | React Native, Expo, TypeScript |
+| **Backend** | Node.js, Express, GraphQL, TypeScript |
+| **AI Services** | Python, FastAPI, LangChain, OpenAI |
+| **Databases** | PostgreSQL, Redis, Vector DB |
+| **Infrastructure** | Docker, Kubernetes, Google Cloud Run |
+| **Monitoring** | Prometheus, Grafana, Custom Analytics |
+| **Security** | JWT, OAuth2, RBAC, Encryption |
 
 ## 📁 Project Structure
 
 ```
-property-management-platform/
-├── backend/               # Node.js/TypeScript backend services
-├── frontend/             # React/Next.js frontend application
-├── mobile/               # React Native mobile app
-├── ai-services/          # Python AI services
-├── infrastructure/       # Docker, Kubernetes, Terraform
-├── docs/                # Documentation
-└── tests/               # End-to-end tests
+propflow-platform/
+├── 🖥️  frontend/              # Next.js web application
+├── 📱  mobile/                # React Native mobile app
+├── ⚙️   backend/               # Microservices (Node.js)
+│   ├── api-gateway/           # GraphQL API Gateway
+│   ├── auth-service/          # Authentication service
+│   ├── property-service/      # Property management
+│   ├── tenant-service/        # Tenant management
+│   ├── payment-service/       # Payment processing
+│   ├── maintenance-service/   # Maintenance tracking
+│   ├── booking-service/       # Appointment booking
+│   └── notification-service/  # Multi-channel notifications
+├── 🤖  ai-services/           # Python AI/ML services
+├── 🚀  infrastructure/        # Deployment & DevOps
+├── 📋  tests/                 # End-to-end tests
+└── 📚  docs/                  # Documentation
 ```
 
-## 🔧 Technology Stack
+## 🚀 Quick Start Guide
 
-### Backend Services
-- **API Gateway**: Express.js with GraphQL
-- **Authentication**: JWT, OAuth2, Auth0
-- **Database**: PostgreSQL, Redis, MongoDB
-- **Message Queue**: RabbitMQ
-- **File Storage**: AWS S3/Google Cloud Storage
-- **Search**: Elasticsearch
+### Prerequisites
+- Node.js 18+
+- Docker & Docker Compose
+- Python 3.9+
+- PostgreSQL 14+
+- Redis 6+
 
-### Frontend
-- **Framework**: Next.js 14 with App Router
-- **Styling**: Tailwind CSS + shadcn/ui
-- **State Management**: Zustand/Redux Toolkit
-- **Forms**: React Hook Form + Zod
-- **Charts**: Recharts/Chart.js
+### 1. Clone & Setup
+```bash
+git clone https://github.com/yourusername/rentova-platform.git
+cd rentova-platform
+cp .env.example .env  # Configure your environment variables
+```
 
-### AI & ML
-- **Framework**: FastAPI + LangChain
-- **LLM**: OpenAI GPT-4, Anthropic Claude
-- **Vector DB**: Pinecone/Weaviate
-- **ML**: TensorFlow/PyTorch
+### 2. One-Command Start
+```bash
+# Start everything with Docker Compose
+./scripts/quick-start.sh
 
-### DevOps & Infrastructure
-- **Containerization**: Docker & Docker Compose
-- **Orchestration**: Kubernetes
-- **CI/CD**: GitHub Actions
-- **Infrastructure**: Terraform
-- **Monitoring**: Prometheus + Grafana
-- **Logging**: ELK Stack
+# Or manually:
+docker-compose up -d
+```
 
-## 🌟 Key Features Implementation
+### 3. Access Applications
+- **Web App**: http://localhost:3000
+- **Admin Panel**: http://localhost:3000/admin  
+- **API Gateway**: http://localhost:4000/graphql
+- **AI Services**: http://localhost:8000/docs
+- **Mobile (Expo)**: http://localhost:19006
+- **Monitoring**: http://localhost:3000/monitoring
 
-### AI Chatbot Integration
-- Natural language processing for tenant queries
-- Automated booking and payment processing
-- Context-aware responses
-- Multi-language support
+### 4. Demo Data
+```bash
+# Load sample data
+npm run seed:demo-data
+```
 
-### Real-time Communication
-- WebSocket connections
-- Push notifications
-- Video calling integration
-- In-app messaging
+## 🌐 Deployment Options
 
-### Payment Processing
-- Multiple payment gateways
-- Automated recurring payments
-- Late fee processing
-- Financial reporting
+### Google Cloud Run (Recommended)
+```bash
+# One-click deployment
+./scripts/deploy-cloudrun.sh
 
-### Property Analytics
-- Occupancy tracking
-- Revenue optimization
-- Market analysis
-- Predictive analytics
+# Or use gcloud CLI
+gcloud run deploy propflow \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated
+```
 
-## 🚀 Deployment
+### AWS ECS
+```bash
+./scripts/deploy-aws.sh
+```
 
-Supports deployment on:
-- **AWS**: EKS, RDS, S3, Lambda
-- **Google Cloud**: GKE, Cloud SQL, Cloud Storage
-- **Azure**: AKS, Azure Database, Blob Storage
-- **On-premises**: Kubernetes clusters
+### Azure Container Instances
+```bash
+./scripts/deploy-azure.sh
+```
+
+### Kubernetes
+```bash
+kubectl apply -f infrastructure/k8s/
+```
 
 ## 📊 Monitoring & Analytics
 
-- Real-time performance monitoring
-- User analytics and behavior tracking
-- Financial reporting and insights
-- Maintenance prediction algorithms
+### Real-time Metrics
+- System performance monitoring
+- Request tracking & error rates
+- Database query optimization
+- Memory & CPU usage alerts
+
+### Business Analytics
+- Property performance insights
+- Revenue forecasting
+- Tenant satisfaction metrics
 - Market trend analysis
 
-## 🔐 Security
+### Access Monitoring Dashboard
+```
+http://localhost:3000/monitoring
+```
 
-- End-to-end encryption
-- RBAC (Role-Based Access Control)
-- SOC 2 compliance ready
-- GDPR compliance
-- Regular security audits
-- Data backup and recovery
+## 🔐 Security Features
 
-## 📱 Mobile App Features
+- **Authentication**: JWT tokens with refresh mechanism
+- **Authorization**: Role-based access control (RBAC)
+- **Data Protection**: End-to-end encryption
+- **Compliance**: GDPR, SOC 2 ready
+- **Security Monitoring**: Real-time threat detection
 
-- Property browsing and booking
+## 🧪 Testing
+
+```bash
+# Run all tests
+npm run test
+
+# Frontend tests
+npm run test:frontend
+
+# Backend tests  
+npm run test:backend
+
+# E2E tests
+npm run test:e2e
+
+# Load testing
+npm run test:load
+```
+
+## 📱 Mobile App
+
+The React Native mobile app provides:
+- Property browsing & booking
 - Tenant portal access
-- Maintenance request submission
+- Maintenance requests
 - Payment processing
-- Document viewing
-- Push notifications
+- Real-time notifications
+- Biometric authentication
+
+### Build Mobile App
+```bash
+cd mobile
+npm install
+npm run android  # or npm run ios
+```
+
+## 🤖 AI Features
+
+### Intelligent Chatbot
+- Natural language processing
+- Context-aware responses
+- Multi-language support
+- Integration with property data
+
+### Predictive Analytics
+- Maintenance forecasting
+- Occupancy predictions
+- Market analysis
+- Pricing optimization
+
+## 📚 Documentation
+
+- [📖 API Documentation](docs/API.md)
+- [🔧 Development Guide](docs/DEVELOPMENT.md)
+- [🚀 Deployment Guide](docs/DEPLOYMENT.md)
+- [🤝 Contributing Guide](docs/CONTRIBUTING.md)
+- [🏗️ Architecture Deep Dive](docs/ARCHITECTURE.md)
+
+## 🌟 Demo & Screenshots
+
+### Admin Dashboard
+![Admin Dashboard](docs/images/admin-dashboard.png)
+
+### Mobile App
+![Mobile App](docs/images/mobile-app.png)
+
+### Analytics
+![Analytics](docs/images/analytics.png)
 
 ## 🤝 Contributing
 
-Please read [CONTRIBUTING.md](docs/CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+We welcome contributions! Please see our [Contributing Guide](docs/CONTRIBUTING.md) for details.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📞 Support
+## 🙏 Acknowledgments
 
-For support, email support@propflow.com or join our Slack channel.
+- Built with ❤️ by the PropFlow team
+- Powered by modern open-source technologies
+- Inspired by the need for intelligent property management
+
+## 📞 Support & Community
+
+- 🐛 [Report Issues](https://github.com/yourusername/propflow-platform/issues)
+- 💬 [Join Discord](https://discord.gg/propflow)
+- 📧 [Email Support](mailto:support@propflow.com)
+- 📖 [Documentation](https://docs.propflow.com)
+
+---
+
+<div align=\"center\">
+  <strong>⭐ Star this repository if you find it helpful! ⭐</strong>
+</div>"

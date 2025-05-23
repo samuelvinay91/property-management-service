@@ -1,0 +1,390 @@
+version: '3.8'
+
+services:
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://api-gateway:4000}
+      - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-ws://api-gateway:4000}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile.prod
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - AUTH_SERVICE_URL=http://auth-service:4001/graphql
+      - PROPERTY_SERVICE_URL=http://property-service:4002/graphql
+      - TENANT_SERVICE_URL=http://tenant-service:4003/graphql
+      - PAYMENT_SERVICE_URL=http://payment-service:4004/graphql
+      - NOTIFICATION_SERVICE_URL=http://notification-service:4005/graphql
+      - MAINTENANCE_SERVICE_URL=http://maintenance-service:4006/graphql
+      - BOOKING_SERVICE_URL=http://booking-service:4007/graphql
+      - REDIS_URL=redis://redis:6379
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+    depends_on:
+      - auth-service
+      - property-service
+      - tenant-service
+      - payment-service
+      - notification-service
+      - maintenance-service
+      - booking-service
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - propflow-network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./backend/auth-service
+      dockerfile: Dockerfile.prod
+    environment:
+      - NODE_ENV=production
+      - AUTH_SERVICE_PORT=4001
+      - DATABASE_URL=${AUTH_DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_EXPIRES_IN=24h
+      - REFRESH_TOKEN_EXPIRES_IN=7d
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # Property Service
+  property-service:
+    build:
+      context: ./backend/property-service
+      dockerfile: Dockerfile.prod
+    environment:
+      - NODE_ENV=production
+      - PROPERTY_SERVICE_PORT=4002
+      - DATABASE_URL=${PROPERTY_DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # Tenant Service
+  tenant-service:
+    build:
+      context: ./backend/tenant-service
+      dockerfile: Dockerfile.prod
+    environment:
+      - NODE_ENV=production
+      - TENANT_SERVICE_PORT=4003
+      - DATABASE_URL=${TENANT_DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # Payment Service
+  payment-service:
+    build:
+      context: ./backend/payment-service
+      dockerfile: Dockerfile.prod
+    environment:
+      - NODE_ENV=production
+      - PAYMENT_SERVICE_PORT=4004
+      - DATABASE_URL=${PAYMENT_DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./backend/notification-service
+      dockerfile: Dockerfile.prod
+    environment:
+      - NODE_ENV=production
+      - NOTIFICATION_SERVICE_PORT=4005
+      - DATABASE_URL=${NOTIFICATION_DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # Maintenance Service
+  maintenance-service:
+    build:
+      context: ./backend/maintenance-service
+      dockerfile: Dockerfile.prod
+    environment:
+      - NODE_ENV=production
+      - MAINTENANCE_SERVICE_PORT=4006
+      - DATABASE_URL=${MAINTENANCE_DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # Booking Service
+  booking-service:
+    build:
+      context: ./backend/booking-service
+      dockerfile: Dockerfile.prod
+    environment:
+      - NODE_ENV=production
+      - BOOKING_SERVICE_PORT=4007
+      - DATABASE_URL=${BOOKING_DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # AI Services
+  ai-services:
+    build:
+      context: ./ai-services
+      dockerfile: Dockerfile.prod
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - AI_SERVICE_PORT=8000
+      - DATABASE_URL=${AI_DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-propflow}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-propflow}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init-prod.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-propflow}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - propflow-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - propflow-network
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.prod.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/nginx/ssl:/etc/nginx/ssl
+      - /var/log/nginx:/var/log/nginx
+    depends_on:
+      - frontend
+      - api-gateway
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.prod.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=30d'
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_SECURITY_SECRET_KEY=${GRAFANA_SECRET_KEY}
+      - GF_DATABASE_TYPE=postgres
+      - GF_DATABASE_HOST=postgres:5432
+      - GF_DATABASE_NAME=grafana
+      - GF_DATABASE_USER=${POSTGRES_USER:-propflow}
+      - GF_DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infrastructure/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - postgres
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # Log Aggregation - Filebeat
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.9.0
+    user: root
+    volumes:
+      - ./infrastructure/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - ELASTICSEARCH_HOSTS=elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+  # Search - Elasticsearch
+  elasticsearch:
+    image: elasticsearch:8.9.0
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - propflow-network
+
+  # Backup Service
+  backup:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_backups:/backups
+      - ./scripts/backup.sh:/backup.sh
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER:-propflow}
+      - POSTGRES_DB=${POSTGRES_DB:-propflow}
+    command: |
+      sh -c '
+        echo "0 2 * * * /backup.sh" | crontab -
+        crond -f
+      '
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - propflow-network
+
+volumes:
+  postgres_data:
+    driver: local
+  postgres_backups:
+    driver: local
+  redis_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  propflow-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+"

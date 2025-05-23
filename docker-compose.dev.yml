@@ -6,25 +6,60 @@ services:
   api-gateway:
     build:
       context: ./backend/api-gateway
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
     volumes:
       - ./backend/api-gateway:/app
       - /app/node_modules
     environment:
       - NODE_ENV=development
-      - DEBUG=true
+      - PORT=4000
+      - AUTH_SERVICE_URL=http://auth-service:4001/graphql
+      - PROPERTY_SERVICE_URL=http://property-service:4002/graphql
+      - TENANT_SERVICE_URL=http://tenant-service:4003/graphql
+      - MAINTENANCE_SERVICE_URL=http://maintenance-service:4004/graphql
+      - BOOKING_SERVICE_URL=http://booking-service:4005/graphql
+      - PAYMENT_SERVICE_URL=http://payment-service:4006/graphql
+      - NOTIFICATION_SERVICE_URL=http://notification-service:4007/graphql
+      - CORS_ORIGIN=http://localhost:3000
+      - JWT_SECRET=dev-secret-key
+      - LOG_LEVEL=info
+    depends_on:
+      - auth-service
+      - property-service
+      - tenant-service
+      - maintenance-service
+      - booking-service
+      - payment-service
+      - notification-service
+    networks:
+      - propflow-network
 
   # Auth Service (Development)
   auth-service:
     build:
       context: ./backend/auth-service
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"
     volumes:
       - ./backend/auth-service:/app
       - /app/node_modules
     environment:
       - NODE_ENV=development
-      - DEBUG=true
+      - PORT=4001
+      - DATABASE_URL=postgresql://propflow:propflow123@postgres:5432/propflow_auth
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=dev-secret-key
+      - EMAIL_FROM=noreply@propflow.com
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - propflow-network
 
   # Property Service (Development)
   property-service:

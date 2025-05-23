@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "projects": {
+    "api-gateway": "backend/api-gateway",
+    "auth-service": "backend/auth-service",
+    "property-service": "backend/property-service",
+    "tenant-service": "backend/tenant-service",
+    "payment-service": "backend/payment-service",
+    "notification-service": "backend/notification-service",
+    "maintenance-service": "backend/maintenance-service",
+    "booking-service": "backend/booking-service",
+    "ai-services": "ai-services",
+    "frontend": "frontend",
+    "mobile": "mobile",
+    "shared": "packages/shared"
+  },
+  "targetDefaults": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"],
+      "cache": true
+    },
+    "test": {
+      "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js"],
+      "cache": true
+    },
+    "lint": {
+      "inputs": ["default", "{workspaceRoot}/.eslintrc.json"],
+      "cache": true
+    },
+    "dev": {
+      "cache": false
+    }
+  },
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "production": [
+      "default",
+      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+      "!{projectRoot}/tsconfig.spec.json",
+      "!{projectRoot}/jest.config.[jt]s",
+      "!{projectRoot}/.eslintrc.json"
+    ],
+    "sharedGlobals": []
+  },
+  "generators": {
+    "@nrwl/react": {
+      "application": {
+        "style": "css",
+        "linter": "eslint",
+        "bundler": "webpack"
+      },
+      "component": {
+        "style": "css"
+      },
+      "library": {
+        "style": "css",
+        "linter": "eslint"
+      }
+    }
+  }
+}

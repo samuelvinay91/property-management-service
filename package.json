@@ -1,31 +1,52 @@
 {
-  "name": "propflow-platform",
+  "name": "rentova-platform",
   "version": "1.0.0",
-  "description": "Comprehensive AI-powered property management platform",
-  "main": "index.js",
+  "description": "Comprehensive AI-powered property management platform by Rentova",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "backend/*",
+    "frontend",
+    "mobile",
+    "ai-services"
+  ],
   "scripts": {
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../mobile && npm install && cd ../ai-services && pip install -r requirements.txt",
-    "dev": "docker-compose -f docker-compose.dev.yml up",
+    "build": "nx run-many --target=build --all",
+    "dev": "nx run-many --target=dev --all --parallel",
     "prod": "docker-compose up",
-    "build": "npm run build:backend && npm run build:frontend && npm run build:mobile",
-    "build:backend": "cd backend && npm run build",
-    "build:frontend": "cd frontend && npm run build",
-    "build:mobile": "cd mobile && npm run build",
-    "test": "npm run test:backend && npm run test:frontend && npm run test:e2e",
-    "test:backend": "cd backend && npm test",
-    "test:frontend": "cd frontend && npm test",
-    "test:e2e": "cd tests && npm test",
-    "lint": "npm run lint:backend && npm run lint:frontend",
-    "lint:backend": "cd backend && npm run lint",
-    "lint:frontend": "cd frontend && npm run lint",
-    "deploy:dev": "npm run build && kubectl apply -f infrastructure/k8s/dev/",
-    "deploy:prod": "npm run build && kubectl apply -f infrastructure/k8s/prod/",
-    "migrate": "cd backend && npm run migrate",
-    "seed": "cd backend && npm run seed"
+    "test": "nx run-many --target=test --all",
+    "lint": "nx run-many --target=lint --all",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "type-check": "nx run-many --target=type-check --all",
+    "clean": "nx reset && rm -rf node_modules */node_modules */*/node_modules",
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
+    "release": "lerna version --conventional-commits --create-release github",
+    "release:patch": "lerna version patch --conventional-commits",
+    "release:minor": "lerna version minor --conventional-commits",
+    "release:major": "lerna version major --conventional-commits",
+    "publish": "lerna publish from-git",
+    "bootstrap": "lerna bootstrap",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up",
+    "docker:down": "docker-compose down",
+    "docker:clean": "docker-compose down -v --rmi all",
+    "deploy:dev": "nx run-many --target=deploy --configuration=development",
+    "deploy:staging": "nx run-many --target=deploy --configuration=staging",
+    "deploy:prod": "nx run-many --target=deploy --configuration=production",
+    "migrate": "nx run-many --target=migrate --all",
+    "seed": "nx run-many --target=seed --all",
+    "generate": "nx generate",
+    "graph": "nx graph",
+    "affected": "nx affected",
+    "affected:build": "nx affected:build",
+    "affected:test": "nx affected:test",
+    "affected:lint": "nx affected:lint"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/propflow-platform.git"
+    "url": "git+https://github.com/samuelvinay91/property-management-service.git"
   },
   "keywords": [
     "property-management",
@@ -33,16 +54,52 @@
     "ai",
     "chatbot",
     "microservices",
-    "saas"
+    "saas",
+    "proptech",
+    "rentova"
   ],
-  "author": "PropFlow Team",
+  "author": "Rentova Team",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/yourusername/propflow-platform/issues"
+    "url": "https://github.com/samuelvinay91/property-management-service/issues"
   },
-  "homepage": "https://github.com/yourusername/propflow-platform#readme",
+  "homepage": "https://github.com/samuelvinay91/property-management-service#readme",
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "@nrwl/cli": "^17.1.0",
+    "@nrwl/nx-cloud": "^17.0.0",
+    "@nrwl/workspace": "^17.1.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "conventional-changelog-cli": "^4.1.0",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "husky": "^8.0.3",
+    "jest": "^29.7.0",
+    "lerna": "^8.0.0",
+    "lint-staged": "^15.1.0",
+    "nx": "^17.1.0",
+    "prettier": "^3.1.0",
+    "standard-version": "^9.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx,json,css,md}": [
+      "prettier --write"
+    ],
+    "*.{js,ts,tsx}": [
+      "eslint --fix"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
   }
 }
